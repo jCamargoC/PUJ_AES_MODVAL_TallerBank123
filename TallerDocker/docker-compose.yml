@@ -1,0 +1,7 @@
+version: '3'
+services:
+  tallerdocker:
+    build: "."
+    ports:
+      - "9099:8080"
+

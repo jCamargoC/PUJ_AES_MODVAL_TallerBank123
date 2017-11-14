@@ -1,0 +1,80 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:p="http://primefaces.org/ui"
+    xmlns:pe="http://primefaces.org/ui/extensions">
+<!-- recurso de mensajes de la palicacion -->
+<h:head>
+    <title><h:outputText value="Pago de Servicios" /></title>
+</h:head>
+<h:body>
+<style>
+.w250{ width: 250px; }
+</style>
+<h:form id="formPrincipal2">
+<p:tabView>
+	<p:tab title="Registrar Convenio de Pago">
+		<p:panel>
+		<p:messages id="messages" autoUpdate="true" closable="true" />	
+			<h:panelGrid columns="2" columnClasses="w250,none">
+				<h:outputLabel value="Código del Convenio" for="numconvenio"/>
+				<p:inputText id="numconvenio" value="#{registrarConvenioBean.idConvenio}" 
+					required="true" requiredMessage="Debe digitar el campo Número del Convenio"
+					size="4" maxlength="4"
+					validatorMessage="El código del convenio solo debe tener números" placeholder="4 digitos">
+				</p:inputText>				
+				<h:outputLabel value="Nombre" for="nombre"/>
+				<p:inputText id="nombre" value="#{registrarConvenioBean.nombre}" 
+					required="true" requiredMessage="Debe digitar el campo Nombre del Convenio"
+					placeholder="Hasta 100 caracteres" size="60" maxlength="100">
+				</p:inputText>				
+				<h:outputLabel value="HOST" for="host"/>
+				<p:inputText id="host" value="#{registrarConvenioBean.host}" 
+					required="true" requiredMessage="Debe digitar el campo HOST del Convenio"
+					placeholder="Hasta 60 caracteres" size="60" maxlength="60"/>
+				<h:outputLabel value="Puerto" for="puerto"/>
+				<p:inputText id="puerto" value="#{registrarConvenioBean.puerto}" 
+					required="true" requiredMessage="Debe digitar el campo Puerto del Convenio"
+					placeholder="Hasta 6 digitos" size="6" maxlength="6">
+				</p:inputText>
+				<h:outputLabel value="URL" for="urlservicio"/>
+				<p:inputTextarea id="urlservicio" value="#{registrarConvenioBean.urlServicio}" 
+					required="true" requiredMessage="Debe digitar el campo URL del Convenio"
+					size="250" maxlength="250" cols="60" rows="4"
+					placeholder="Hasta 250 caracteres"/>
+				<h:outputLabel value="Tipo" for="tipo"/>
+				<p:selectOneMenu id="tipo" value="#{registrarConvenioBean.tipo}">
+					<f:selectItem itemLabel="REST" itemValue="REST"/>
+					<f:selectItem itemLabel="SOAP" itemValue="SOAP"/>
+				</p:selectOneMenu>				
+				<h:outputLabel value="Método" for="metodo"/>
+				<p:inputText id="metodo" value="#{registrarConvenioBean.metodo}" 
+					required="true" requiredMessage="Debe digitar el campo Tipo del Convenio"
+					size="60" maxlength="60"
+					placeholder="Hasta 60 caracteres">
+				</p:inputText>
+				<h:outputLabel value="Mapeo de campos" for="mapeo"/>
+				<p:inputTextarea id="mapeo" value="#{registrarConvenioBean.mapeo}" 
+					required="true" requiredMessage="Debe digitar el campo Mapeo del Convenio"
+					size="250" maxlength="250" cols="60" rows="4" 
+					placeholder="Hasta 250 caracteres"/>
+				<p:commandButton value="Nuevo" immediate="true" process="@form" update="@form" >
+				 	<p:ajax update="@form" resetValues="true" />
+				 </p:commandButton>
+				<p:commandButton value="Registrar" actionListener="#{registrarConvenioBean.btnRegistrarConvenio}" process="@form"/>               
+			</h:panelGrid>
+		</p:panel>
+	</p:tab>
+</p:tabView>
+<p:ajaxStatus onstart="statusDialog.show();" onsuccess="statusDialog.hide();"/>
+<p:dialog modal="true" widgetVar="statusDialog" header="Procesando..." 
+	draggable="false" closable="false" resizable="false" width="250" >		
+	<h:graphicImage url="white_loading.gif" styleClass="imgCenter"/>
+</p:dialog>
+</h:form>
+</h:body>
+</html>

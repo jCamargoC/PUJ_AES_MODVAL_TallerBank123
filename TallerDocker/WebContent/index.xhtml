@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:p="http://primefaces.org/ui"
+    xmlns:pe="http://primefaces.org/ui/extensions">
+<h:head>
+    <title><h:outputText value="Pago de Servicios" /></title>
+</h:head>
+<h:body>
+<style>.noborder{border:none !important;}</style>
+<h:form id="formPrincipal">
+<p:tabView>
+	<p:tab title="Consultar y realizar Pago">
+		<p:panel>
+			<h3><h:outputText value="Bienvenido!" /></h3>
+			<p:messages id="messages" autoUpdate="true" closable="true" />	
+			<p:panelGrid columns="2" style="border:none !important;" styleClass="noborder" >
+				<h:outputText value="Por favor digite el código de pago y haga click en el botón consultar" />		
+				<p:inputText value="#{indexBean.codigoPago}" required="true" requiredMessage="Debe digitar el campo"
+					validatorMessage="El código de pago solo debe tener números" placeholder="Entre 8 y 15 digitos">
+					<f:validateRegex pattern="^\d{8,15}$" />
+				</p:inputText>
+				<h:outputText>&nbsp;</h:outputText>
+				<h:panelGrid columns="2">
+					<p:commandButton value="Nuevo" immediate="true" process="@form" update="@form" >
+					 	<p:ajax update="@form" resetValues="true" />
+					</p:commandButton>
+					<p:commandButton value="Consultar" actionListener="#{indexBean.btnConsultarPago}" update="@form"/>	
+				</h:panelGrid>
+			</p:panelGrid>	
+			<p:panel visible="#{indexBean.rndPanelPago}">
+				<h:outputLabel value="Detalles pago factura" />
+				<p:panelGrid columns="2">
+					<h:outputLabel value="Convenio" />
+					<h:outputText value="#{indexBean.nombreConvenio}" />
+					<h:outputLabel value="Valor" />
+					<h:outputText value="#{indexBean.valorFactura}">
+						<f:convertNumber pattern="$ ###,###,###" />
+					</h:outputText>
+					<h:outputText value="&nbsp;" />
+					<p:commandButton value="Pagar" actionListener="#{indexBean.btnRealizarPago}" update="@form"/>						
+				</p:panelGrid>
+			</p:panel>
+		</p:panel>
+	</p:tab>
+</p:tabView>
+<p:ajaxStatus onstart="statusDialog.show();" onsuccess="statusDialog.hide();"/>
+<p:dialog modal="true" widgetVar="statusDialog" header="Procesando..." 
+	draggable="false" closable="false" resizable="false" width="250" >		
+	<h:graphicImage url="white_loading.gif" styleClass="imgCenter"/>
+</p:dialog>
+</h:form>
+</h:body>
+</html>
