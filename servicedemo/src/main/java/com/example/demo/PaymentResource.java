@@ -19,7 +19,7 @@ public class PaymentResource {
 
     @RequestMapping(path = "payments/{idFactura}", method = RequestMethod.GET,
             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-    public Factura getInfoFactura(@PathVariable("idFactura") int idFactura) {
+    public Factura getInfoFactura(@PathVariable("idFactura") Integer idFactura) {
     	Double valor = new Random().nextDouble() * 100000;
     	System.out.println("servicio factura------>"+valor);
         return new Factura(idFactura, valor);
@@ -29,14 +29,15 @@ public class PaymentResource {
             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE},
             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}
     )
-    public Resultado pagarFactura(@PathParam("idFactura") int idFactura, Factura factura) {
+    public Resultado pagarFactura(@PathParam("idFactura") Integer idFactura, Factura factura) {
+    	System.out.println("van a pagar la factura");
         return new Resultado(idFactura, "Factura Pagada Exitosamente");
     }
 
     @RequestMapping(path = "payments/{idFactura}", method = RequestMethod.DELETE,
             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}
     )
-    public Resultado copensarFactura(@PathParam("idFactura") int idFactura) {
+    public Resultado copensarFactura(@PathParam("idFactura") Integer idFactura) {
         return new Resultado(idFactura, "Factura Compensada Exitosamente");
     }
 }

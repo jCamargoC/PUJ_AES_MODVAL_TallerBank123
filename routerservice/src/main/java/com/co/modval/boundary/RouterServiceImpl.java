@@ -4,6 +4,8 @@ import java.util.Date;
 
 import javax.ws.rs.core.Response;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +21,10 @@ import com.co.modval.entities.SOAPData;
 import com.co.modval.utils.RESTInvoker;
 import com.co.modval.utils.SOAPInvoker;
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientHandlerException;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.UniformInterfaceException;
+import com.sun.jersey.api.client.WebResource;
 
 import entities.ServiceProvider;
 
@@ -34,7 +40,7 @@ public class RouterServiceImpl {
 
 	private static final String HEADERS_JSON = "Accept:application/json,Content-Type:application/json; charset=utf8";
 
-	@RequestMapping(path = "obetenerFactura/{idFactura}", method = RequestMethod.GET, produces = {
+	@RequestMapping(path = "obtenerFactura/{idFactura}", method = RequestMethod.GET, produces = {
 			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	public Pago getInfoFactura(@PathVariable("idFactura") String idFactura) {
 		/*
@@ -49,16 +55,38 @@ public class RouterServiceImpl {
 			 * aca debe consumir el convenio y obetener el dato de la factura y de volverlo
 			 * como el objeto Pago
 			 */
-			Pago response = consumirWSConvenioConsultar(convenio, llaveConvenio, idFactura, "consultar");
+			Pago response = consumirWSConvenioConsultar(convenio, llaveConvenio, idFactura, llaveConvenio+"-"+convenio.getNombre());
 			/* retorna el pago con la informacion de la factura */
 			return response;
 		}
 		return new Pago();
 	}
 	
-	@RequestMapping(path = "pagarFactura/{idFactura}", method = RequestMethod.GET, produces = {
+	@RequestMapping(path = "pagarFactura/{idFactura}/{valorPago}", method = RequestMethod.GET, produces = {
 			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
-	public Pago doPagarFactura(@PathVariable("idFactura") String idFactura) {
+	public String doPagarFactura(@PathVariable("idFactura") String idFactura, @PathVariable("valorPago") Double valorPago) {
+		/*
+		 * tomamos los 4 primeros digitos de la factura para buscarlo en el listado de
+		 * convenios
+		 */
+		Long llaveConvenio = Long.parseLong(idFactura.substring(0, 4));
+		/* valida la existencia del convenio */
+		Convenio convenio = validarExistenciaConvenio(llaveConvenio);
+		if (convenio != null && convenio.getId() != null) { 
+			/*
+			 * aca debe consumir el convenio y obetener el dato de la factura y de volverlo
+			 * como el objeto Pago
+			 */
+			String respuesta = consumirWSConvenio(convenio, llaveConvenio, idFactura, valorPago, FuncionEnum.PAGAR);
+			System.out.println(" pagar>>>>>>>>>>>>>>>>< "+respuesta);
+			return respuesta;
+		}
+		return "-1";
+	}
+	
+	@RequestMapping(path = "compensarFactura/{idFactura}/{valorPago}", method = RequestMethod.GET, produces = {
+			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+	public String doCompensarFactura(@PathVariable("idFactura") String idFactura, @PathVariable("valorPago") Double valorPago) {
 		/*
 		 * tomamos los 4 primeros digitos de la factura para buscarlo en el listado de
 		 * convenios
@@ -71,11 +99,11 @@ public class RouterServiceImpl {
 			 * aca debe consumir el convenio y obetener el dato de la factura y de volverlo
 			 * como el objeto Pago
 			 */
-			Pago response = consumirWSConvenio(convenio, llaveConvenio, idFactura, FuncionEnum.PAGAR);
-			/* retorna el pago con la informacion de la factura */
-			return response;
+			String respuesta = consumirWSConvenio(convenio, llaveConvenio, idFactura, valorPago, FuncionEnum.COMPENSAR);
+			System.out.println(" compensar>>>>>>>>>>>>>>>>< "+respuesta);
+			return respuesta;
 		}
-		return new Pago();
+		return "-1";
 	}
 
 	public Convenio validarExistenciaConvenio(Long idConvenio) {
@@ -85,29 +113,28 @@ public class RouterServiceImpl {
 		return convenioExiste;
 	}
 
-	public Pago consumirWSConvenio(Convenio convenio, Long idConvenio, String idFactura, FuncionEnum opcion) {
+	public String consumirWSConvenio(Convenio convenio, Long idConvenio, String idFactura, Double valorPago, FuncionEnum opcion) {
 		/* objeto de consulta */
 		Pago pago = new Pago();
 		pago.setNumeroConvenio(idConvenio);
 		pago.setNumeroFactura(Long.parseLong(idFactura));
+		pago.setTotalPago(valorPago);
 		String endpointUrl = String.format("http://%s:%d/%s", convenio.getHost(), convenio.getPuerto(),
 				convenio.getUrlServicio());
 		/* determian el tipo de servicio a consumir - REST/SOAP */
 		if (convenio.getTipo().equals("REST")) {
 			RESTData serviceData = convenio.getRESTDataByFuncion(opcion);
-			pago.setNumeroIdCliente((String) RESTInvoker.invokeService(endpointUrl + "/" + serviceData.getRecurso(),
+			System.out.println(endpointUrl + "/" + serviceData.getRecurso() + "----" + idFactura +"----$--"+valorPago);
+			System.out.println("---------A > "+serviceData.getMetodo());
+			return (String) RESTInvoker.invokeService(endpointUrl + "/" + serviceData.getRecurso(),
 					serviceData.getMetodo(), serviceData.getParamsMapping(), serviceData.getHeaders(),
-					serviceData.getPayloadMapping(), serviceData.getResponseData(), pago));
+					serviceData.getAccept(),
+					serviceData.getPayloadMapping(), serviceData.getResponseData(), pago);
 		} else {
 			SOAPData serviceData = convenio.getSOAPDataByFuncion(opcion);
-			pago.setNumeroIdCliente((String) SOAPInvoker.invokeService(endpointUrl, serviceData.getSoapAction(),
-					serviceData.getXsltDefinition(), serviceData.getResponseElement(), pago));
+			return (String) SOAPInvoker.invokeService(endpointUrl, serviceData.getSoapAction(),
+					serviceData.getXsltDefinition(), serviceData.getResponseElement(), pago);
 		}
-		/* si el consumir el ws es valido, retorna el valor */
-		if (pago.getNumeroIdCliente() != null) {
-			return pago;
-		}
-		return new Pago();
 	}
 
 	public Pago consumirWSConvenioConsultar(Convenio convenio, Long idConvenio, String idFactura, String opcion) {
@@ -115,13 +142,18 @@ public class RouterServiceImpl {
 		Pago pago = new Pago();
 		pago.setNumeroConvenio(idConvenio);
 		pago.setNumeroFactura(Long.parseLong(idFactura));
+		pago.setNumeroIdCliente(opcion);
 		String endpointUrl = String.format("http://%s:%d/%s", convenio.getHost(), convenio.getPuerto(),
-				convenio.getUrlServicio());
+				convenio.getUrlServicio()); 
 		/* determian el tipo de servicio a consumir - REST/SOAP */
 		if (convenio.getTipo().equals("REST")) {
 			RESTData serviceData = convenio.getRESTDataByFuncion(FuncionEnum.CONSULTAR);
+			System.out.println(endpointUrl + "/" + serviceData.getRecurso() + "----" + idFactura);
+			System.out.println("---------A > "+serviceData.getMetodo());
+			
 			pago.setTotalPago((Double) RESTInvoker.invokeService(endpointUrl + "/" + serviceData.getRecurso(),
 					serviceData.getMetodo(), serviceData.getParamsMapping(), serviceData.getHeaders(),
+					serviceData.getAccept(),
 					serviceData.getPayloadMapping(), serviceData.getResponseData(), pago));
 		} else {
 			SOAPData serviceData = convenio.getSOAPDataByFuncion(FuncionEnum.CONSULTAR);

@@ -25,18 +25,21 @@ public class RegistryServiceImpl {
 	@RequestMapping(path = "getConvenio/{idConvenio}", method = RequestMethod.GET,
             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public Convenio getConvenioByIdConvenio(@PathVariable("idConvenio") Integer idConvenio) {
-		System.out.println("cuarto >>>>>>>>>>>> convenio" + idConvenio);
 		return SerialiceObjectsImpl.getConvenioByIdConvenio(idConvenio);
 	}
 	
 	@RequestMapping(path = "registrarconvenio", method = RequestMethod.PUT)
     public Response registrarConvenio(@RequestBody Convenio convenio) {
 		if(convenio!=null && convenio.getIdConvenio()!=null) {	
-			convenio.setId((long) (SerialiceObjectsImpl.getLstConvenio().size() + 1));			
-			SerialiceObjectsImpl.save2disk(convenio);
-			return Response.status(200).entity(convenio.getIdConvenio()).build();		
+			Convenio existeConvenio = SerialiceObjectsImpl.getConvenioByIdConvenio(convenio.getIdConvenio());
+			if(existeConvenio!=null && existeConvenio.getIdConvenio()==null) {
+				convenio.setId((long) (SerialiceObjectsImpl.getLstConvenio().size() + 1));			
+				SerialiceObjectsImpl.save2disk(convenio);
+				return Response.status(200).entity(convenio.getIdConvenio()).build();	
+			}
+			return Response.status(200).entity(-1).build();	
 		}
-		return Response.status(404).entity("pailas no llego!").build();	
+		return Response.status(404).entity("No hay datos para almacenar!").build();	
 	}
 
 }

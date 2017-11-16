@@ -92,7 +92,7 @@ public class Convenio implements Serializable{
 	
 	public RESTData getRESTDataByFuncion(FuncionEnum funcionEnum) {
 		for (RESTData restData : restServicesData) {
-			if(funcionEnum.equals(restData.getFuncion())) {
+			if(funcionEnum.getOpc().equals(restData.getFuncion().getOpc())) { System.out.println("hallado convenio!");
 				return restData;
 			}
 		}

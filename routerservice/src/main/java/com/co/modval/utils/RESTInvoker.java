@@ -1,87 +1,76 @@
 package com.co.modval.utils;
 
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.co.modval.entities.Pago;
-
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
 
 public class RESTInvoker {
-	
-	
+
+	public static void main(String[] args) {
+		String method = "GET";
+		String headers = "Accept:application/json,Content-Type:application/json; charset=utf8";
+		String paramsMapping = "idFactura:numeroFactura";
+		Pago pago = new Pago();
+		pago.setNumeroConvenio(35423L);
+		pago.setNumeroFactura(1234L);
+		pago.setNumeroIdCliente("fsdfsdfds");
+		pago.setTipoIdCliente("CC");
+		pago.setTotalPago(3434344.4344);
+		String payloadMapping = null;
+		String responseData = "valorFactura";
+		String serviceURL = "http://192.168.0.4:9090/servicios/pagos/v1/payments/{idFactura}";
+		String accept = "application/json";
+		System.out.println(
+				invokeService(serviceURL, method, paramsMapping, headers, accept, payloadMapping, responseData, pago));
+	}
+
 	public static Object invokeService(String serviceURL, String method, String paramsMapping, String headers,
-			String payloadMapping, String responseData, Pago pago) {
+			String accept, String payloadMapping, String responseData, Pago pago) {
 		String[] completed = completeService(serviceURL, paramsMapping, payloadMapping, pago);
 		serviceURL = completed[0];
 		String payload = completed[1];
-		return invoke(serviceURL, method, headers, payload, responseData);
+		return invoke(serviceURL, method, headers, accept, payload, responseData);
 	}
 
-	private static Object invoke(String serviceURL, String method, String headers, String payload,
+	private static Object invoke(String serviceURL, String method, String headers, String accept, String payload,
 			String responseData) {
 		try {
-
-			URL url = new URL(serviceURL);
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestMethod(method);
+			Client client = Client.create();
+			WebResource webResource = client.resource(serviceURL);
 			if (headers != null && !headers.equals("")) {
-
 				String[] splitted = headers.split(",");
 				for (String string : splitted) {
 					String[] field = string.split(":");
-
-					conn.setRequestProperty(field[0], field[1]);
+					webResource.header(field[0], field[1]);
 				}
-
 			}
-			if (payload != null && !payload.equals("")) {
-				conn.setDoOutput(true);
-				OutputStream os = conn.getOutputStream();
-				os.write(payload.getBytes());
-				os.flush();
+			ClientResponse response = null;
+			if (method.equals("GET")) {
+				response = webResource.accept(accept).get(ClientResponse.class);
+			} else if (method.equals("POST")) {
+				response = webResource.type(accept).post(ClientResponse.class, payload);
+			} else if (method.equals("PUT")) {
+				response = webResource.type(accept).put(ClientResponse.class, payload);
+			} else if (method.equals("DELETE")) {
+				response = webResource.accept(accept).delete(ClientResponse.class);
 			}
-
-			if (conn.getResponseCode() != 200) {
-				throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
+			if (response.getStatus() != 200) {
+				throw new RuntimeException("Failed : HTTP error code : " + response.getStatus());
 			}
+			JSONObject jsonObject = new JSONObject(response.getEntity(String.class));
 
-			BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-
-			String output = "";
-			String returnData="";
-			System.out.println("Output from Server .... \n");
-			while ((output = br.readLine()) != null) {
-				System.out.println(output);
-				returnData+=output;
-			}
-			JSONObject jsonObject=new JSONObject(returnData);
-			conn.disconnect();
 			return jsonObject.get(responseData);
-		} catch (
-
-		MalformedURLException e) {
-
-			e.printStackTrace();
-
-		} catch (IOException e) {
-
-			e.printStackTrace();
-
-		} catch (JSONException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
+
 	}
 
 	private static String[] completeService(String serviceURL, String paramsMapping, String payloadMapping, Pago pago) {
@@ -97,14 +86,15 @@ public class RESTInvoker {
 		if (payloadMapping != null && !payloadMapping.equals("")) {
 			String[] splitted = payloadMapping.split(",");
 			payload = "{";
-			for (int i = 0; i < splitted.length; i++) {				
-				String string=splitted[i];
+			for (int i = 0; i < splitted.length; i++) {
+				String string = splitted[i];
 				String[] field = string.split(":");
 				Object value = getAttributeFromPago(pago, field[1]);
 				if (value instanceof String) {
-					payload += "\"" + field[0] + "\":\"" + value.toString() + "\""+(i==splitted.length-1?"":",");
+					payload += "\"" + field[0] + "\":\"" + value.toString() + "\""
+							+ (i == splitted.length - 1 ? "" : ",");
 				} else if (value instanceof Number || value instanceof Boolean) {
-					payload += "\"" + field[0] + "\":" + value.toString() +(i==splitted.length-1?"":",");
+					payload += "\"" + field[0] + "\":" + value.toString() + (i == splitted.length - 1 ? "" : ",");
 				}
 			}
 			payload += "}";
@@ -115,8 +105,8 @@ public class RESTInvoker {
 	public static Object getAttributeFromPago(Pago pago, String attribute) {
 
 		try {
-			String methodName = "get" + capitalizeAttr(attribute);
-			Method method = pago.getClass().getMethod(methodName);
+			String methodName = "get" + capitalizeAttr(attribute); 
+			Method method = pago.getClass().getMethod(methodName); 
 			Object value = method.invoke(pago);
 			return value;
 		} catch (NoSuchMethodException e) {

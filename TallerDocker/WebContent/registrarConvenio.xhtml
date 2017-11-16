@@ -20,7 +20,7 @@
 	<p:tab title="Registrar Convenio de Pago">
 		<p:panel>
 		<p:messages id="messages" autoUpdate="true" closable="true" />	
-			<h:panelGrid columns="2" columnClasses="w250,none">
+			<p:panelGrid columns="2" columnClasses="w250,none">
 				<h:outputLabel value="Código del Convenio" for="numconvenio"/>
 				<p:inputText id="numconvenio" value="#{registrarConvenioBean.idConvenio}" 
 					required="true" requiredMessage="Debe digitar el campo Número del Convenio"
@@ -35,7 +35,7 @@
 				<h:outputLabel value="HOST" for="host"/>
 				<p:inputText id="host" value="#{registrarConvenioBean.host}" 
 					required="true" requiredMessage="Debe digitar el campo HOST del Convenio"
-					placeholder="Hasta 60 caracteres" size="60" maxlength="60"/>
+					placeholder="Hasta 80 caracteres" size="80" maxlength="80"/>
 				<h:outputLabel value="Puerto" for="puerto"/>
 				<p:inputText id="puerto" value="#{registrarConvenioBean.puerto}" 
 					required="true" requiredMessage="Debe digitar el campo Puerto del Convenio"
@@ -49,24 +49,111 @@
 				<h:outputLabel value="Tipo" for="tipo"/>
 				<p:selectOneMenu id="tipo" value="#{registrarConvenioBean.tipo}">
 					<f:selectItem itemLabel="REST" itemValue="REST"/>
-					<f:selectItem itemLabel="SOAP" itemValue="SOAP"/>
 				</p:selectOneMenu>				
-				<h:outputLabel value="Método" for="metodo"/>
-				<p:inputText id="metodo" value="#{registrarConvenioBean.metodo}" 
-					required="true" requiredMessage="Debe digitar el campo Tipo del Convenio"
-					size="60" maxlength="60"
-					placeholder="Hasta 60 caracteres">
-				</p:inputText>
-				<h:outputLabel value="Mapeo de campos" for="mapeo"/>
-				<p:inputTextarea id="mapeo" value="#{registrarConvenioBean.mapeo}" 
-					required="true" requiredMessage="Debe digitar el campo Mapeo del Convenio"
-					size="250" maxlength="250" cols="60" rows="4" 
-					placeholder="Hasta 250 caracteres"/>
-				<p:commandButton value="Nuevo" immediate="true" process="@form" update="@form" >
-				 	<p:ajax update="@form" resetValues="true" />
-				 </p:commandButton>
-				<p:commandButton value="Registrar" actionListener="#{registrarConvenioBean.btnRegistrarConvenio}" process="@form"/>               
-			</h:panelGrid>
+				<h:outputLabel value="Configuración de Capacidades" />
+				<p:panelGrid columns="2">
+					<h:outputLabel value="Capacidad" for="capacidad"/>
+					<p:selectOneMenu id="capacidad" value="#{registrarConvenioBean.capacidad}">
+						<f:selectItem itemLabel="CONSULTAR" itemValue="CONSULTAR"/>
+						<f:selectItem itemLabel="PAGAR" itemValue="PAGAR"/>
+						<f:selectItem itemLabel="COMPENSAR" itemValue="COMPENSAR"/>
+					</p:selectOneMenu>	
+					<h:outputLabel value="Método" for="metodo"/>
+					<p:inputText id="metodo" value="#{registrarConvenioBean.metodo}" 
+						required="true" requiredMessage="Debe digitar el campo Metodo del Convenio"
+						size="80" maxlength="80"
+						placeholder="Hasta 80 caracteres">
+					</p:inputText>	
+					<h:outputLabel value="Recurso" for="recurso"/>
+					<p:inputText id="recurso" value="#{registrarConvenioBean.recurso}" 
+						required="true" requiredMessage="Debe digitar el campo Recurso del Convenio"
+						size="80" maxlength="80"
+						placeholder="Hasta 80 caracteres">
+					</p:inputText>	
+					<h:outputLabel value="Accept" for="accept"/>
+					<p:inputText id="accept" value="#{registrarConvenioBean.accept}" 
+						requiredMessage="Debe digitar el campo Accept del Convenio"
+						size="80" maxlength="80"
+						placeholder="Hasta 80 caracteres">
+					</p:inputText>
+					<h:outputLabel value="Headers" for="headers"/>
+					<p:inputText id="headers" value="#{registrarConvenioBean.headers}" 
+						requiredMessage="Debe digitar el campo Headers del Convenio"
+						size="80" maxlength="80"
+						placeholder="Hasta 80 caracteres">
+					</p:inputText>			
+					<h:outputLabel value="Mapeo de campos Parametros" for="paramsMapping"/>
+					<p:inputTextarea id="paramsMapping" value="#{registrarConvenioBean.paramsMapping}" 
+						required="true" requiredMessage="Debe digitar el campo paramsMapping del Convenio"
+						size="250" maxlength="250" cols="60" rows="4" 
+						placeholder="Hasta 250 caracteres"/>
+					<h:outputLabel value="Mapeo de campos payloadMapping" for="payloadMapping"/>
+					<p:inputTextarea id="payloadMapping" value="#{registrarConvenioBean.payloadMapping}" 
+						required="true" requiredMessage="Debe digitar el campo payloadMapping del Convenio"
+						size="250" maxlength="250" cols="60" rows="4" 
+						placeholder="Hasta 250 caracteres"/>
+					<h:outputLabel value="Mapeo de campos responseData" for="responseData"/>
+					<p:inputTextarea id="responseData" value="#{registrarConvenioBean.responseData}" 
+						required="true" requiredMessage="Debe digitar el campo responseData del Convenio"
+						size="250" maxlength="250" cols="60" rows="4" 
+						placeholder="Hasta 250 caracteres"/>
+					<h:outputText value="&nbsp;" />	
+					<p:commandButton value="Agregar Capacidad" actionListener="#{registrarConvenioBean.btnAgregarCapacidad}" update="@form"/> 
+				</p:panelGrid>
+				<h:outputText value="&nbsp;" />	
+				<p:dataTable value="#{registrarConvenioBean.restServicesData}" var="reg" >
+					<p:column>
+						<f:facet name="header">
+							<h:outputText value="Capacidad" />
+						</f:facet>						
+						<h:outputText value="#{reg.funcion}" />
+					</p:column>
+					<p:column>
+						<f:facet name="header">
+							<h:outputText value="Método" />
+						</f:facet>						
+						<h:outputText value="#{reg.metodo}" />
+					</p:column>
+					<p:column>
+						<f:facet name="header">
+							<h:outputText value="Recurso" />
+						</f:facet>						
+						<h:outputText value="#{reg.recurso}" />
+					</p:column>
+					<p:column>
+						<f:facet name="header">
+							<h:outputText value="Accept" />
+						</f:facet>						
+						<h:outputText value="#{reg.accept}" />
+					</p:column>
+					<p:column>
+						<f:facet name="header">
+							<h:outputText value="Headers" />
+						</f:facet>						
+						<h:outputText value="#{reg.headers}" />
+					</p:column>
+					<p:column>
+						<f:facet name="header">
+							<h:outputText value="Parametros" />
+						</f:facet>						
+						<h:outputText value="#{reg.paramsMapping}" />
+					</p:column>
+					<p:column>
+						<f:facet name="header">
+							<h:outputText value="Payload" />
+						</f:facet>						
+						<h:outputText value="#{reg.payloadMapping}" />
+					</p:column>
+					<p:column>
+						<f:facet name="header">
+							<h:outputText value="Response" />
+						</f:facet>						
+						<h:outputText value="#{reg.responseData}" />
+					</p:column>
+				</p:dataTable>
+				<p:commandButton value="Nuevo" action="#{registrarConvenioBean.btnLimpiar}" ajax="false" immediate="true" update="@form" />
+				<p:commandButton value="Registrar" actionListener="#{registrarConvenioBean.btnRegistrarConvenio}" update="@form"/>               
+			</p:panelGrid>
 		</p:panel>
 	</p:tab>
 </p:tabView>

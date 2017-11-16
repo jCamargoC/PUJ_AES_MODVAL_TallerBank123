@@ -11,6 +11,14 @@ public class RESTData implements Serializable{
 	private String payloadMapping;
 	private String headers;
 	private String responseData;
+	private String accept;
+	
+	public String getAccept() {
+		return accept;
+	}
+	public void setAccept(String accept) {
+		this.accept = accept;
+	}
 	public String getMetodo() {
 		return metodo;
 	}

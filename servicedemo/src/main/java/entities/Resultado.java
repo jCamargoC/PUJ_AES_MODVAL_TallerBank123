@@ -5,22 +5,22 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 public class Resultado {
 
-    protected int idFactura;
+    protected Integer idFactura;
     protected String mensaje;
 
     public Resultado() {
     }
 
-    public Resultado(int idFactura, String mensaje) {
+    public Resultado(Integer idFactura, String mensaje) {
         this.idFactura = idFactura;
         this.mensaje = mensaje;
     }
 
-    public int getIdFactura() {
+    public Integer getIdFactura() {
         return idFactura;
     }
 
-    public void setIdFactura(int idFactura) {
+    public void setIdFactura(Integer idFactura) {
         this.idFactura = idFactura;
     }
 

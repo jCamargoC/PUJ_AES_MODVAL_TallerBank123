@@ -3,6 +3,7 @@ package com.co.app.pagoservicios;
 import java.io.Serializable;
 
 import javax.faces.bean.ManagedBean;
+import javax.faces.bean.SessionScoped;
 import javax.faces.event.ActionEvent;
 import javax.faces.view.ViewScoped;
 
@@ -10,9 +11,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
 import com.co.app.pagoservicios.entities.Pago;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
 
-@ViewScoped
+@SessionScoped
 @ManagedBean(name = "indexBean")
 public class IndexBean extends ControllerBean implements Serializable {
 
@@ -20,11 +24,13 @@ public class IndexBean extends ControllerBean implements Serializable {
 	private static final String TS_SERVER = "routerservice";
 	private static final int TS_PORT = 9999;
 	private static final String TS_CAPACITY = "router/api/consume/";
-	private static String TS_URL_CONSULTAR = String.format("http://%s:%d/%s", TS_SERVER, TS_PORT, TS_CAPACITY + "obtenerFactura/");
-	private static String TS_URL_PAGAR = String.format("http://%s:%d/%s", TS_SERVER, TS_PORT, TS_CAPACITY + "pagarFactura/");
-	private static String TS_URL_COMPENSAR = String.format("http://%s:%d/%s", TS_SERVER, TS_PORT, TS_CAPACITY + "compensarFactura/");
+	private static String TS_URL_CONSULTAR = String.format("http://%s:%d/%s", TS_SERVER, TS_PORT,
+			TS_CAPACITY + "obtenerFactura/");
+	private static String TS_URL_PAGAR = String.format("http://%s:%d/%s", TS_SERVER, TS_PORT,
+			TS_CAPACITY + "pagarFactura/");
+	private static String TS_URL_COMPENSAR = String.format("http://%s:%d/%s", TS_SERVER, TS_PORT,
+			TS_CAPACITY + "compensarFactura/");
 
-	
 	private String codigoPago;
 	private Boolean rndPanelPago = false;
 	private Double valorFactura;
@@ -37,7 +43,7 @@ public class IndexBean extends ControllerBean implements Serializable {
 	public void setCodigoPago(String codigoPago) {
 		this.codigoPago = codigoPago;
 	}
-	
+
 	public Boolean getRndPanelPago() {
 		return rndPanelPago;
 	}
@@ -63,67 +69,92 @@ public class IndexBean extends ControllerBean implements Serializable {
 	}
 
 	/**
-	 * consulta la informacion de la factura, consume el sservicio del router findInfoFactura
+	 * consulta la informacion de la factura, consume el sservicio del router
+	 * findInfoFactura
+	 * 
 	 * @param event
 	 */
 	public void btnConsultarPago(ActionEvent event) {
-		rndPanelPago = false; System.out.println("va a consyltars");
+		rndPanelPago = false;
 		try {
+			ObjectMapper mapper = new ObjectMapper();
 			Client client = Client.create();
-			Pago response = client.resource(TS_URL_CONSULTAR+Integer.parseInt(codigoPago)).
-					header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-					.get(Pago.class);
-			if(response!=null && response.getNumeroConvenio()!=null) {
-				valorFactura = response.getTotalPago();
-				nombreConvenio = response.getNumeroConvenio().toString();
+			WebResource webResource = client.resource(TS_URL_CONSULTAR + Integer.parseInt(codigoPago));
+			ClientResponse response = webResource.type("application/json").get(ClientResponse.class);
+			Pago pagoRes = mapper.readValue(response.getEntity(String.class), Pago.class);
+			System.out.println("--responde consultar-------------------->");
+			if (pagoRes != null && pagoRes.getNumeroConvenio() != null) {
+				valorFactura = pagoRes.getTotalPago();
+				nombreConvenio = pagoRes.getNumeroIdCliente();
 				rndPanelPago = true;
-			}else {
+			} else {
 				addError("No existe convenio de pago para la factura asociada");
 			}
-		}catch(Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			addError("Se han presentado problemas en la comunicación, por favor intente mas tarde");
-			
-		}		
-	}
-	
-	/**
-	 * realiza el pago de la factura, consume el servicio del router pagarFactura
-	 * @param event
-	 */
-	public void btnRealizarPago(ActionEvent event) {System.out.println("..................");
-		try {			
-			Client client = Client.create();
-			Pago response = client.resource(TS_URL_PAGAR+Integer.parseInt(codigoPago)).
-					header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).get(Pago.class);
-			if(response!=null && response.getNumeroIdCliente()!=null) {
-				addInfo("Pago realizado con éxito! "+response.getNumeroIdCliente());
-			}else {
-				/* compensar */
-				if(compensar()) {
-					addError("No se ha posido realizar el pago, su saldo no ha sido afectado, por favor intente mas tarde.");
-				}
-			}
-			addInfo("hola");
-		}catch(Exception e) {
-			/* compensar */
-			compensar();			
+
 		}
 	}
-	
+
+	/**
+	 * realiza el pago de la factura, consume el servicio del router pagarFactura
+	 * 
+	 * @param event
+	 */
+	public void btnRealizarPago(ActionEvent event) {
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			Client client = Client.create();System.out.println("consultar factura ");
+			WebResource webResource = client.resource(TS_URL_PAGAR + Integer.parseInt(codigoPago)+"/"+valorFactura);
+			ClientResponse response = webResource.type("application/json").get(ClientResponse.class);
+			String msgRes = response.getEntity(String.class);
+			System.out.println("--respuesta pagar----------------------------->"+msgRes);
+			if (msgRes != null && !msgRes.equals("-1")) {
+				addInfo("Pago realizado con éxito! " + msgRes);
+			} else {
+				/* compensar */
+				if (compensar(event)) {
+					addError(
+							"No se ha posido realizar el pago, su saldo no ha sido afectado, por favor intente mas tarde.");
+				}
+			}
+		} catch (Exception e) {
+			/* compensar */
+			compensar(event);
+		}
+	}
+
 	/**
 	 *  realiza la compensacion de la factura, consume el servicio del roueter compensarFactura
 	 * @return
 	 */
-	public Boolean compensar() {
-		Client client = Client.create();
-		Pago response = client.resource(TS_URL_PAGAR+Integer.parseInt(codigoPago)).
-				header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).get(Pago.class);
-		if(response!=null && response.getNumeroIdCliente()!=null) {
-			return true;
-		}else {
-			addError("Se han presentado problemas en la comunicación, por favor intente mas tarde");
+	public Boolean compensar(ActionEvent event) {
+		try {	
+			ObjectMapper mapper = new ObjectMapper();
+			Client client = Client.create();System.out.println("compensar pago");
+			WebResource webResource = client.resource(TS_URL_COMPENSAR + Integer.parseInt(codigoPago)+"/"+valorFactura);
+			ClientResponse response = webResource.type("application/json").get(ClientResponse.class);
+			String msgRes = response.getEntity(String.class);
+			System.out.println("--respuesta compensar----------------------------->"+msgRes);
+			if (msgRes != null && !msgRes.equals("-1")) {
+				return true;
+			} else {
+				addError("Se han presentado problemas en la comunicación, por favor intente mas tarde");
+				return false;
+			}			
+		}catch(Exception e) {e.printStackTrace();
+			/* compensar fallido */
+			addError("No se ha podido compensar el pago, favor comuniquese con la entidad!");		
 		}
 		return false;
+	}
+	
+	public String btnLimpiar() {
+		codigoPago = null;
+		rndPanelPago = false;
+		valorFactura = null;
+		nombreConvenio = null;
+		return "index";
 	}
 }
